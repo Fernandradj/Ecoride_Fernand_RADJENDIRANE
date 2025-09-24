@@ -3,8 +3,13 @@
 $db_server = "localhost";
 $db_user = "root";
 $db_pass = "";
-$db_name = "ecoride_db_fernand";
+$db_name = "ecorideprojet23_bdd";
 $pdo = "";
+
+// $db_server = "mysql-ecorideprojet23.alwaysdata.net";
+// $db_user = "431868_db";
+// $db_pass = "Rfernand23*";
+// $db_name = "ecorideprojet23_bdd";
 
 define("MIN_NOTE_AVIS",3);
 

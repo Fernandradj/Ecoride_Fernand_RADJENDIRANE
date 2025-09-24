@@ -56,17 +56,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 $_SESSION["id"] = $user['Utilisateur_Id'];
                                 $_SESSION["username"] = $username;
                                 $_SESSION["role"] = $userRole;
-                                header("location: index.php");
+                                if ($userRole == Utilisateur::USER_ROLE_ADMIN) {
+                                    header("location: accueil_administrateur.php");
+                                }
+                                else if ($userRole == Utilisateur::USER_ROLE_EMPLOYE) {
+                                    header("location: accueil_employe.php");
+                                }
+                                else {   
+                                    header("location: accueil_utilisateur.php");
+                                }
                             } else {
                                 $username_err = "L'utilisateur est invalide. Veuillez contacter l'administrateur.";
                             }
                         }
                     } else {
                         // Password is not valid
-                        echo "pass not ok...";
-                        echo $password;
-                        echo "--";
-                        echo $hashed_password;
                         $password_err = "Le mot de passe est invalide.";
                     }
                 } else {

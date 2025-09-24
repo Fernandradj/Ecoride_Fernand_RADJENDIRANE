@@ -7,7 +7,7 @@ if (isset($_GET['voyageId'])) {
     $showMessageVisiteur = false;
     $successMsg = "";
     $errorMsg = "";
-    
+
     $voyage = new Voyage($_GET['voyageId'], $pdo);
     $participants = $voyage->getParticipations($pdo);
     $participantsIds = [];
@@ -17,9 +17,6 @@ if (isset($_GET['voyageId'])) {
 
     $userIsDriver = false;
     $displayParticiper = false;
-    $displayAnnulerChauffeur = false;
-    $displayDemarrer = false;
-    $displayArreter = false;
     $displayAnnulerPassager = false;
     $displayValider = false;
 
@@ -30,10 +27,7 @@ if (isset($_GET['voyageId'])) {
     if (!isset($_SESSION["id"])) {
         $showMessageVisiteur = true;
     } else if ($voyage->isVoyageOuvert()) {
-        if ($userIsDriver) {
-            $displayAnnulerChauffeur = true;
-            $displayDemarrer = true;
-        } else if (str_contains($_SESSION["role"], Utilisateur::USER_ROLE_PASSAGER)) {
+        if ((!$userIsDriver) && str_contains($_SESSION["role"], Utilisateur::USER_ROLE_PASSAGER)) {
             if (in_array($_SESSION["id"], $participantsIds)) {
                 $displayAnnulerPassager = true;
             } else if ($voyage->getNbPlace() >= 1) {
@@ -43,10 +37,6 @@ if (isset($_GET['voyageId'])) {
     } else if ($voyage->isVoyageTermine()) {
         if (str_contains($_SESSION["role"], Utilisateur::USER_ROLE_PASSAGER) && in_array($_SESSION["id"], $participantsIds)) {
             $displayValider = true;
-        }
-    } else if ($voyage->isVoyageEnCours()) {
-        if ($userIsDriver) {
-            $displayArreter = true;
         }
     }
 
@@ -70,32 +60,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             } else {
                 $errorMsg = $result->getMessage();
             }
-        } else if (isset($_POST["annulerChauffeur"])) {
-            $result = $voyage->annulerChauffeur($pdo);
-            if ($result->getSucceeded()) {
-                $successMsg = $result->getMessage();
-                header("Refresh:2");
-            } else {
-                $errorMsg = $result->getMessage();
-            }
-        } else if (isset($_POST["demarrer"])) {
-            $result = $voyage->demarrer($pdo);
-            if ($result->getSucceeded()) {
-                $successMsg = $result->getMessage();
-                header("Refresh:2");
-            } else {
-                $errorMsg = $result->getMessage();
-            }
-        } else if (isset($_POST["arreter"])) {
-            $result = $voyage->arreter($pdo);
-            if ($result->getSucceeded()) {
-                $successMsg = $result->getMessage();
-                header("Refresh:2");
-            } else {
-                $errorMsg = $result->getMessage();
-            }
         } else if (isset($_POST["valider"])) {
-            header("location: detail_avis.php?voyageId=".$voyage->getId()."&userId=".$_SESSION["id"]);
+            header("location: detail_avis.php?voyageId=" . $voyage->getId());
         }
     }
 }
@@ -185,19 +151,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                             <?php if ($displayParticiper): ?>
                                 <button class="action-btn" name="participer" type="submit">Participer</button>
-                            <?php endif; ?>
-
-                            <?php if ($displayAnnulerChauffeur): ?>
-                                <button class="action-btn" name="annulerChauffeur" type="submit">Annuler
-                                    (Chauffeur)</button>
-                            <?php endif; ?>
-
-                            <?php if ($displayDemarrer): ?>
-                                <button class="action-btn" name="demarrer" type="submit">Démarrer</button>
-                            <?php endif; ?>
-
-                            <?php if ($displayArreter): ?>
-                                <button class="action-btn" name="arreter" type="submit">Arrêter</button>
                             <?php endif; ?>
 
                             <?php if ($displayAnnulerPassager): ?>

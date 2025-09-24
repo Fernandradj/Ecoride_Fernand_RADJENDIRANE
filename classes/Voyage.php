@@ -11,7 +11,7 @@ class Voyage
     public const RESULT_VOYAGE_CANCELLED = "Votre voyage a bien été annulé.";
 
     public const RESULT_VOYAGE_DEMARRE = "Le statut de votre voyage a bien été mis à jour. Bon voyage !";
-    
+
     public const RESULT_VOYAGE_ARRETE = "Le statut de votre voyage a bien été mis à jour.";
 
     public const VOYAGE_ANNULE = "Voyage Annulé";
@@ -23,13 +23,14 @@ class Voyage
     public const VOYAGE_STATUT_EN_COURS = 'En cours';
     public const VOYAGE_STATUT_ANNULE = 'Annulé';
 
-    public const PARTICIPATION_STATUT_PAYE = 'Payé';
-    public const PARTICIPATION_STATUT_ANNULE = 'Annulé';
-
-    private $pdo;
+    private PDO $pdo;
 
     private int $id;
     private string $placeDescription;
+    private string $departurePlace;
+    private string $arrivalPlace;
+    private string $departureAddress;
+    private string $arrivalAddress;
     private int $nbPlace;
     private $departureDate;
     private $departureTime;
@@ -48,26 +49,118 @@ class Voyage
         $this->id = $id;
         $this->pdo = $pdo;
 
-        // Get voyage
-        $sql = 'SELECT Covoiturage_id, Date_depart, Heure_depart, Adresse_depart, Ville_depart, Date_arrivee, Heure_arrivee, Adresse_arrivee, Ville_arrivee, Statut, Nb_place, Prix_personne, Duree,Voiture_Id FROM covoiturage WHERE Covoiturage_id = ' . $id;
-        // $sql = 'SELECT Covoiturage_id, Date_depart, Heure_depart, Adresse_depart, Ville_depart, Date_arrivee, Heure_arrivee, Adresse_arrivee, Ville_arrivee, covoiturage.Statut, covoiturage.Nb_place, Prix_personne, Duree, covoiturage.Voiture_id as Voiture_Id, voiture.Ecologique, voiture.Marque, voiture.Modele, voiture.Energie, voiture.Immatriculation, YEAR(voiture.Date_premiere_immatriculation) as anneeImmat, utilisateur.Utilisateur_id as driverId, utilisateur.Nom, utilisateur.Prenom, utilisateur.Note, utilisateur.Telephone, utilisateur.Email, utilisateur.Photo, utilisateur.Animal_accepte, utilisateur.Fumeur_accepte, utilisateur.Autre_preference FROM covoiturage JOIN voiture ON covoiturage.Voiture_id = voiture.Voiture_id JOIN utilisateur ON voiture.Utilisateur_id = utilisateur.Utilisateur_id WHERE Covoiturage_id = ' . $id;
-        // echo $sql;
+        if (($id != null) && ($id != '')) {
+            $sql = 'SELECT Covoiturage_id, Date_depart, Heure_depart, Adresse_depart, Ville_depart, Date_arrivee, Heure_arrivee, Adresse_arrivee, Ville_arrivee, Statut, Nb_place, Prix_personne, Duree, Voiture_Id FROM covoiturage WHERE Covoiturage_id = ' . $id;
 
-        foreach ($pdo->query($sql, PDO::FETCH_ASSOC) as $row) {
-            $this->placeDescription = $row['Ville_depart'] . ' à ' . $row['Ville_arrivee'];
-            $this->departureDate = $row['Date_depart'];
-            $this->departureTime = $row['Heure_depart'];
-            $this->arrivalDate = $row['Date_arrivee'];
-            $this->arrivalTime = $row['Heure_arrivee'];
-            $this->duree = $row['Duree'];
-            $this->price = $row['Prix_personne'];
-            $this->nbPlace = $row['Nb_place'];
-            $this->status = $row["Statut"];
+            foreach ($pdo->query($sql, PDO::FETCH_ASSOC) as $row) {
+                $this->placeDescription = $row['Ville_depart'] . ' à ' . $row['Ville_arrivee'];
+                $this->departurePlace = $row['Ville_depart'];
+                $this->arrivalPlace = $row['Ville_arrivee'];
+                $this->departureAddress = $row['Adresse_depart'];
+                $this->arrivalAddress = $row['Adresse_arrivee'];
+                $this->departureDate = $row['Date_depart'];
+                $this->departureTime = $row['Heure_depart'];
+                $this->arrivalDate = $row['Date_arrivee'];
+                $this->arrivalTime = $row['Heure_arrivee'];
+                $this->duree = $row['Duree'];
+                $this->price = $row['Prix_personne'];
+                $this->nbPlace = $row['Nb_place'];
+                $this->status = $row["Statut"];
 
-            $this->voiture = new Voiture($row['Voiture_Id'], $pdo);
-            $this->driver = $this->voiture->getDriver();
+                $this->voiture = new Voiture($row['Voiture_Id'], $pdo);
+                $this->driver = $this->voiture->getDriver();
+            }
         }
+    }
 
+    public static function loadVoyagesForPassager(int $userId, PDO $pdo): array
+    {
+        if (($userId != null) && ($userId != "")) {
+            $sql = 'SELECT covoiturage.Covoiturage_Id voyageId, Date_depart, Heure_depart, Adresse_depart, Ville_depart, Date_arrivee, Heure_arrivee, Adresse_arrivee, Ville_arrivee, covoiturage.Statut, covoiturage.Nb_place, Prix_personne, Duree, voiture.Voiture_Id, utilisateur.Pseudo nomChauffeur, utilisateur.Email emailChauffeur, utilisateur.Telephone telChauffeur, voiture.Marque marque, voiture.Modele modele, voiture.Immatriculation immatriculation FROM covoiturage JOIN participation ON covoiturage.Covoiturage_Id = participation.Covoiturage_Id JOIN voiture ON voiture.Voiture_id = covoiturage.Voiture_id JOIN utilisateur ON voiture.Utilisateur_id = utilisateur.Utilisateur_id WHERE participation.Utilisateur_Id = ? AND participation.Statut = ? ORDER BY Date_depart DESC';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$userId, Avis::PARTICIPATION_STATUT_PAYE]);
+            $voyages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if ($stmt) {
+                return $voyages;
+            }
+        }
+        return [];
+    }
+
+    public static function loadVoyagesForChauffeur(int $userId, PDO $pdo): array
+    {
+        if (($userId != null) && ($userId != "")) {
+            $sql = 'SELECT covoiturage.Covoiturage_Id voyageId, Date_depart, Heure_depart, Adresse_depart, Ville_depart, Date_arrivee, Heure_arrivee, Adresse_arrivee, Ville_arrivee, covoiturage.Statut, covoiturage.Nb_place, Prix_personne, Duree, voiture.Voiture_Id, utilisateur.Pseudo nomChauffeur, utilisateur.Email emailChauffeur, utilisateur.Telephone telChauffeur, voiture.Marque marque, voiture.Modele modele, voiture.Immatriculation immatriculation, count(participation.Utilisateur_id) nbParticipants FROM covoiturage LEFT JOIN participation ON covoiturage.Covoiturage_Id = participation.Covoiturage_Id AND participation.Statut = ? JOIN voiture ON voiture.Voiture_id = covoiturage.Voiture_id JOIN utilisateur ON voiture.Utilisateur_id = utilisateur.Utilisateur_id WHERE voiture.Utilisateur_Id = ? GROUP BY covoiturage.Covoiturage_Id ORDER BY Date_depart';
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([Avis::PARTICIPATION_STATUT_PAYE, $userId]);
+            $voyages = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if ($stmt) {
+                if (count($voyages) > 0) {
+                    if ($voyages[0]['voyageId'] != null) {
+                        return $voyages;
+                    }
+                }
+            }
+        }
+        return [];
+    }
+
+    public static function creerVoyage(string $date_depart, string $heure_depart, string $adresse_depart, string $ville_depart, string $date_arrivee, string $heure_arrivee, string $adresse_arrivee, string $ville_arrivee, int $nb_place, float $prix_personne, int $id_voiture, float $duree, PDO $pdo): Result
+    {
+        // echo "creer..";
+        $sql = "INSERT INTO covoiturage (Date_depart, Heure_depart, Adresse_depart, Ville_depart, Date_arrivee, Heure_arrivee, Adresse_arrivee, Ville_arrivee, Nb_place, Prix_personne, Voiture_Id, Duree) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $stmt = $pdo->prepare($sql);
+
+        try {
+            $stmt->execute([
+                $date_depart,
+                $heure_depart,
+                $adresse_depart,
+                $ville_depart,
+                $date_arrivee,
+                $heure_arrivee,
+                $adresse_arrivee,
+                $ville_arrivee,
+                $nb_place,
+                $prix_personne,
+                $id_voiture,
+                $duree
+            ]);
+            return new Result(true, "Votre voyage a été crée avec succès.");
+        } catch (PDOException $e) {
+            return new Result(false, Voyage::RESULT_FAIL);
+        }
+    }
+
+    public static function enregistrerVoyage(int $voyageId, string $date_depart, string $heure_depart, string $adresse_depart, string $ville_depart, string $date_arrivee, string $heure_arrivee, string $adresse_arrivee, string $ville_arrivee, int $nb_place, float $prix_personne, int $id_voiture, float $duree, PDO $pdo): Result
+    {
+        echo "maj..";
+        $sql = "UPDATE covoiturage SET Date_depart = ?, Heure_depart = ?, Adresse_depart = ?, Ville_depart = ?, Date_arrivee = ?, Heure_arrivee = ?, Adresse_arrivee = ?, Ville_arrivee = ?, Nb_place = ?, Prix_personne = ?, Voiture_Id = ?, Duree = ? WHERE Covoiturage_Id = ?";
+        $stmt = $pdo->prepare($sql);
+
+        try {
+            $stmt->execute([
+                $date_depart,
+                $heure_depart,
+                $adresse_depart,
+                $ville_depart,
+                $date_arrivee,
+                $heure_arrivee,
+                $adresse_arrivee,
+                $ville_arrivee,
+                $nb_place,
+                $prix_personne,
+                $id_voiture,
+                $duree, 
+                $voyageId
+            ]);
+            return new Result(true, "Votre voyage a été mis à jour avec succès.");
+        } catch (PDOException $e) {
+            echo $e;
+            return new Result(false, Voyage::RESULT_FAIL);
+        }
     }
 
     public function getId(): int
@@ -78,6 +171,22 @@ class Voyage
     public function getPlaceDescription(): string
     {
         return $this->placeDescription;
+    }
+
+    public function getDeparturePlace(): string {
+        return $this->departurePlace;
+    }
+    
+    public function getArrivalPlace(): string {
+        return $this->arrivalPlace;
+    }
+
+    public function getDepartureAddress(): string {
+        return $this->departureAddress;
+    }
+
+    public function getArrivalAddress(): string {
+        return $this->arrivalAddress;
     }
 
     public function getDepartureDate(): string
@@ -115,16 +224,20 @@ class Voyage
         return $this->status;
     }
 
-    public function isVoyageOuvert(): bool {
+    public function isVoyageOuvert(): bool
+    {
         return $this->getStatus() === Voyage::VOYAGE_STATUT_OUVERT;
     }
-    public function isVoyageAnnule(): bool {
+    public function isVoyageAnnule(): bool
+    {
         return $this->getStatus() === Voyage::VOYAGE_STATUT_ANNULE;
     }
-    public function isVoyageEnCours(): bool {
+    public function isVoyageEnCours(): bool
+    {
         return $this->getStatus() === Voyage::VOYAGE_STATUT_EN_COURS;
     }
-    public function isVoyageTermine(): bool {
+    public function isVoyageTermine(): bool
+    {
         return $this->getStatus() === Voyage::VOYAGE_STATUT_TERMINE;
     }
 
@@ -145,7 +258,7 @@ class Voyage
 
     function getParticipantsIds($pdo): array
     {
-        $participants = $this->getParticipations();
+        $participants = $this->getParticipations($pdo);
         $participantsIds = [];
         if ($participants && (count($participants) > 0)) {
             foreach ($participants as $participant) {
@@ -157,7 +270,7 @@ class Voyage
 
     function getParticipations($pdo): array
     {
-        $sql = "SELECT Utilisateur_Id, Covoiturage_Id, Credit FROM participation WHERE Covoiturage_Id = " . $this->getId() . " AND Statut = '" . Voyage::PARTICIPATION_STATUT_PAYE . "'";
+        $sql = "SELECT Utilisateur_Id, Covoiturage_Id, Credit FROM participation WHERE Covoiturage_Id = " . $this->getId() . " AND Statut = '" . Avis::PARTICIPATION_STATUT_PAYE . "'";
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
         $participants = $stmt->fetchAll();
@@ -166,6 +279,7 @@ class Voyage
 
     public function checkCanParticipate(float $credit): bool
     {
+        echo $credit . " - " . $this->price;
         return ($credit >= $this->price);
     }
 
@@ -178,7 +292,12 @@ class Voyage
             try {
                 $sql = "INSERT INTO participation (Utilisateur_Id, Covoiturage_Id, Statut, Credit) VALUES (?, ?, ?, ?)";
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([$passager->getId(), $this->getId(), Voyage::PARTICIPATION_STATUT_PAYE, $this->price]);
+                $stmt->execute([$passager->getId(), $this->getId(), Avis::PARTICIPATION_STATUT_PAYE, $this->price]);
+
+                $newNbPlace = $this->getNbPlace() - 1;
+                $sql = "UPDATE covoiturage SET Nb_place = ? WHERE Covoiturage_Id = ?";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$newNbPlace, $this->getId()]);
 
                 if ($stmt) {
                     if ($passager->payerVoyage($this->getPrice(), $pdo)) {
@@ -202,14 +321,20 @@ class Voyage
         try {
             $sql = "UPDATE participation SET Credit = ?, Statut = ? WHERE Utilisateur_Id = ? AND Covoiturage_Id = ? AND Statut = ?";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$this->price, Voyage::PARTICIPATION_STATUT_ANNULE, $passager->getId(), $this->getId(), Voyage::PARTICIPATION_STATUT_PAYE]);
+            $stmt->execute([$this->price, Avis::PARTICIPATION_STATUT_ANNULE, $passager->getId(), $this->getId(), Avis::PARTICIPATION_STATUT_PAYE]);
+
+            $newNbPlace = $this->getNbPlace() + 1;
+            $sql = "UPDATE covoiturage SET Nb_place = ? WHERE Covoiturage_Id = ?";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$newNbPlace, $this->getId()]);
 
             if ($stmt) {
                 if ($passager->rembourserVoyage($this->getPrice(), $pdo)) {
                     return new Result(true, Voyage::RESULT_PARTICPATION_CANCELLED);
                 }
             }
-        } catch (\Throwable $th) {
+        } catch (\Exception $e) {
+            // echo $e;
             return new Result(false, Voyage::RESULT_FAIL);
         }
         return new Result(false, Voyage::RESULT_FAIL);
@@ -235,7 +360,7 @@ class Voyage
 
                 $sql = "UPDATE participation SET Statut = ? WHERE Covoiturage_Id = ? AND Statut = ?";
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([Voyage::PARTICIPATION_STATUT_ANNULE, $this->getId(), Voyage::PARTICIPATION_STATUT_PAYE]);
+                $stmt->execute([Avis::PARTICIPATION_STATUT_ANNULE, $this->getId(), Avis::PARTICIPATION_STATUT_PAYE]);
                 if ($stmt) {
                     return new Result(true, Voyage::RESULT_VOYAGE_CANCELLED);
                 }
@@ -247,7 +372,8 @@ class Voyage
         return new Result(false, Voyage::RESULT_FAIL);
     }
 
-    public function demarrer(PDO $pdo) {
+    public function demarrer(PDO $pdo)
+    {
         try {
             $sql = "UPDATE covoiturage SET Statut = ? WHERE Covoiturage_Id = ?";
             $stmt = $pdo->prepare($sql);
@@ -258,8 +384,9 @@ class Voyage
             return new Result(false, Voyage::RESULT_FAIL);
         }
     }
-    
-    public function arreter(PDO $pdo) {
+
+    public function arreter(PDO $pdo)
+    {
         try {
             $sql = "UPDATE covoiturage SET Statut = ? WHERE Covoiturage_Id = ?";
             $stmt = $pdo->prepare($sql);

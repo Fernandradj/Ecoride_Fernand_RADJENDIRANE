@@ -3,27 +3,29 @@
 
 <?php
 
-if (isset($_GET['userId'])) {
-    try {
+if (isset($_SESSION['id']) || isset($_SESSION['role'])) {
 
-        // Requête pour récupérer tous les voyages
-        $sql = "SELECT Covoiturage_Id, Date_depart, Heure_depart, Ville_depart, Date_arrivee, Heure_arrivee, Ville_arrivee, covoiturage.Statut, covoiturage.Nb_place, Duree FROM covoiturage JOIN voiture ON voiture.Voiture_id = covoiturage.Voiture_id JOIN utilisateur ON voiture.Utilisateur_id = utilisateur.Utilisateur_id WHERE utilisateur.Utilisateur_id = " . $_GET['userId'];
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute();
-        $resultats = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $voyagesPassager = Voyage::loadVoyagesForPassager($_SESSION['id'], $pdo);
+    $voyagesChauffeur = Voyage::loadVoyagesForChauffeur($_SESSION['id'], $pdo);
 
-    } catch (PDOException $e) {
-        echo "Erreur de connexion : " . $e->getMessage();
+    $userIsPassager = false;
+    $userIsChauffeur = false;
+    if (str_contains($_SESSION['role'], Utilisateur::USER_ROLE_PASSAGER)) {
+        $userIsPassager = true;
     }
+    if (str_contains($_SESSION['role'], Utilisateur::USER_ROLE_CHAUFFEUR)) {
+        $userIsChauffeur = true;
+    }
+
 }
 ?>
 <?php
 if (isset($_POST['action']) && isset($_POST['voyages_selectionnes'])) {
-    $action = $_POST['action'];
-    $voyages_selectionnes = $_POST['voyages_selectionnes'];
+    // $action = $_POST['action'];
+    // $voyages_selectionnes = $_POST['voyages_selectionnes'];
 
-    // Convertir le tableau en une chaîne pour la clause IN de la requête SQL
-    $placeholders = implode(',', array_fill(0, count($voyages_selectionnes), '?'));
+    // // Convertir le tableau en une chaîne pour la clause IN de la requête SQL
+    // $placeholders = implode(',', array_fill(0, count($voyages_selectionnes), '?'));
 
 
     /* try {
@@ -65,53 +67,111 @@ if (isset($_POST['action']) && isset($_POST['voyages_selectionnes'])) {
     <!-- main -->
     <main>
         <div class="liste_voyages_container">
-            <h1>Mes voyages</h1>
             <form action="traitement.php" method="post">
-                <table>
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th></th>
-                            <th>Date départ</th>
-                            <th>Heure départ</th>
-                            <th>Ville départ</th>
-                            <th>Date arrivée</th>
-                            <th>Heure arrivée</th>
-                            <th>Ville arrivée</th>
-                            <th>Statut</th>
-                            <th>Nombre de places</th>
-                            <th>Durée</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php
-                        if (!empty($resultats)) {
-                            foreach ($resultats as $voyage) {
-                                echo "<tr>";
-                                echo "<td><input type='checkbox' name='voyages_selectionnes[]' value='" . htmlspecialchars($voyage['Covoiturage_Id']) . "'></td>";
-                                echo "<td><a href=\"detail_voyage.php?voyageId=" . htmlspecialchars($voyage['Covoiturage_Id']) . "\">Détail</a></td>";
-                                echo "<td>" . htmlspecialchars($voyage['Date_depart']) . "</td>";
-                                echo "<td>" . htmlspecialchars($voyage['Heure_depart']) . "</td>";
-                                echo "<td>" . htmlspecialchars($voyage['Ville_depart']) . "</td>";
-                                echo "<td>" . htmlspecialchars($voyage['Date_arrivee']) . "</td>";
-                                echo "<td>" . htmlspecialchars($voyage['Heure_arrivee']) . "</td>";
-                                echo "<td>" . htmlspecialchars($voyage['Ville_arrivee']) . "</td>";
-                                echo "<td>" . htmlspecialchars($voyage['Statut']) . "</td>";
-                                echo "<td>" . htmlspecialchars($voyage['Nb_place']) . "</td>";
-                                echo "<td>" . htmlspecialchars($voyage['Duree']) . "</td>";
-                                echo "</tr>";
-                            }
-                        } else {
-                            echo "<tr><td colspan='10'>Aucun voyage trouvé.</td></tr>";
-                        }
-                        ?>
-                    </tbody>
-                </table>
-                <br>
+
+                <?php if ($userIsChauffeur): ?>
+                    <h1>Mes voyages (chauffeur)</h1>
+                    <?php if (isset($voyagesChauffeur) && (!empty($voyagesChauffeur))): ?>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th>N° Voyage</th>
+                                    <th>Ville départ</th>
+                                    <th>Date/Heure de départ</th>
+                                    <th>Ville arrivée</th>
+                                    <th>Date/Heure arrivée</th>
+                                    <th>Statut</th>
+                                    <th>Durée</th>
+                                    <th>Nombre de participants</th>
+                                    <th>Voiture</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                if (!empty($voyagesChauffeur)) {
+                                    foreach ($voyagesChauffeur as $voyage) {
+                                        echo "<tr>";
+                                        // echo "<td><input type='checkbox' name='voyages_selectionnes[]' value='" . htmlspecialchars($voyage['Covoiturage_Id']) . "'></td>";
+                                        echo "<td><a href=\"edition_voyage.php?voyageId=" . htmlspecialchars($voyage['voyageId']) . "\">Détail</a></td>";
+                                        echo "<td>" . htmlspecialchars($voyage['voyageId']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['Date_depart']) . " - " . htmlspecialchars($voyage['Heure_depart']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['Ville_depart']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['Date_arrivee']) . " - " . htmlspecialchars($voyage['Heure_arrivee']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['Ville_arrivee']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['Statut']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['Duree']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['nbParticipants']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['immatriculation']) . " (" . htmlspecialchars($voyage['marque']) . " - " . htmlspecialchars($voyage['modele']) . "</td>";
+                                        echo "</tr>";
+                                    }
+                                } else {
+                                    echo "<tr><td colspan='10'>Aucun voyage trouvé.</td></tr>";
+                                }
+                                ?>
+                            </tbody>
+                        </table>
+
+                        <div class="form-actions">
+                            <a href="edition_voyage.php" class="btn btn-primary">Nouveau voyage</a>
+                        </div>
+                    <?php else: ?>
+                        <h6>Aucun voyage trouvé !</h6>
+                    <?php endif; ?>
+                <?php endif; ?>
+
+                <?php if ($userIsPassager): ?>
+                    <h1>Mes voyages (passager)</h1>
+                    <?php if (isset($voyagesPassager) && (!empty($voyagesPassager))): ?>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <!-- <th></th> -->
+                                    <th>N° Voyage</th>
+                                    <th>Ville départ</th>
+                                    <th>Date/Heure de départ</th>
+                                    <th>Ville arrivée</th>
+                                    <th>Date/Heure arrivée</th>
+                                    <th>Statut</th>
+                                    <th>Durée</th>
+                                    <th>Chauffeur</th>
+                                    <th>Voiture</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php
+                                if (!empty($voyagesPassager)) {
+                                    foreach ($voyagesPassager as $voyage) {
+                                        echo "<tr>";
+                                        // echo "<td><input type='checkbox' name='voyages_selectionnes[]' value='" . htmlspecialchars($voyage['Covoiturage_Id']) . "'></td>";
+                                        echo "<td><a href=\"detail_voyage.php?voyageId=" . htmlspecialchars($voyage['voyageId']) . "\">Détail</a></td>";
+                                        echo "<td>" . htmlspecialchars($voyage['voyageId']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['Date_depart']) . " - " . htmlspecialchars($voyage['Heure_depart']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['Ville_depart']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['Date_arrivee']) . " - " . htmlspecialchars($voyage['Heure_arrivee']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['Ville_arrivee']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['Statut']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['Duree']) . "</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['nomChauffeur']) . " (" . htmlspecialchars($voyage['emailChauffeur']) . " - " . htmlspecialchars($voyage['telChauffeur']) . ")</td>";
+                                        echo "<td>" . htmlspecialchars($voyage['immatriculation']) . " (" . htmlspecialchars($voyage['marque']) . " - " . htmlspecialchars($voyage['modele']) . "</td>";
+                                        echo "</tr>";
+                                    }
+                                } else {
+                                    echo "<tr><td colspan='10'>Aucun voyage trouvé.</td></tr>";
+                                }
+                                ?>
+                            </tbody>
+                        </table>
+                    <?php else: ?>
+                        <h6>Aucun voyage trouvé !</h6>
+                    <?php endif; ?>
+                <?php endif; ?>
+                <!-- <br>
                 <div class="btn_group">
                     <button class="action-btn" type="submit" name="action" value="valider">Valider</button>
                     <button class="action-btn" type="submit" name="action" value="annuler">Annuler</button>
-                </div>
+                </div> -->
             </form>
         </div>
     </main>

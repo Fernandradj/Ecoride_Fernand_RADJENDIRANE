@@ -20,7 +20,7 @@
 }
 
 .home_main_section {
-    background-color: chartreuse;
+    background-color: #003b09;
     height: 100vh;
     display: flex;
     align-items: center;
@@ -31,7 +31,7 @@
 .home_main_title {
     font-size: 100px;
     text-align: center;
-
+    color: white;
 }
 
 .btn_go {
@@ -55,7 +55,7 @@
     padding: 10%;
     display: flex;
     align-items: center;
-
+    justify-content: center;
 }
 
 .home_description {
@@ -815,7 +815,6 @@ body {
     font-family: Arial, sans-serif;
     background-color: #f4f4f4;
     margin: 0;
-    padding: 20px;
 }
 
 .container {
@@ -953,4 +952,43 @@ button {
 
 button:hover {
     background-color: #0056b3;
+}
+
+/* avis */
+
+.rating {
+  margin-top: 40px;
+  border: none;
+  float: left;
+}
+
+.rating > label {
+  color: #90A0A3;
+  float: right;
+}
+
+.rating > label:before {
+  margin: 5px;
+  font-size: 2em;
+  font-family: 'Font Awesome 5 Free';
+  content: "\f005";
+  font-weight:900;
+  display: inline-block;
+}
+
+.rating > input {
+  display: none;
+}
+
+.rating > input:checked ~ label,
+.rating:not(:checked) > label:hover,
+.rating:not(:checked) > label:hover ~ label {
+  color: #F79426;
+}
+
+.rating > input:checked + label:hover,
+.rating > input:checked ~ label:hover,
+.rating > label:hover ~ input:checked ~ label,
+.rating > input:checked ~ label:hover ~ label {
+  color: #FECE31;
 }

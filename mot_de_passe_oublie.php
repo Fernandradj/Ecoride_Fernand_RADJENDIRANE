@@ -8,7 +8,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL);
 
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $message = "Veuillez entrer une adresse email valide. ❌";
+        $message = "Veuillez entrer une adresse email valide.";
     } else {
         // 1. Vérifier si l'email existe dans la base de données
         $sql = "SELECT Utilisateur_Id FROM utilisateur WHERE Email = ?";
@@ -30,7 +30,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt_insert->execute([$user_id, $token, $expires]);
 
             // 4. Construire le lien de réinitialisation
-            $reset_link = "creation_mot_de_passe.php?token=" . $token;
+            $reset_link = 'https://' . $_SERVER['HTTP_HOST'] . "/creation_mot_de_passe.php?token=" . $token;
+            // echo $reset_link;
 
             // 5. Simuler l'envoi de l'email (remplacez par une vraie fonction d'envoi d'email)
             $sujet = "Réinitialisation de votre mot de passe";
@@ -42,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             mail($email, $sujet, $corps_email); // Décommentez pour un vrai envoi d'email
             $message = "Un lien de réinitialisation a été envoyé à votre adresse email. Veuillez vérifier votre boîte de
-        réception. ✅";
+        réception.";
 
             // Pour le développement, affichons le lien
             echo "<div
@@ -50,7 +51,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             Pour le test, le lien est : <a href='$reset_link'>$reset_link</a></div>";
 
         } else {
-            $message = "Cette adresse email n'est pas enregistrée. ❌";
+            $message = "Cette adresse email n'est pas enregistrée.";
         }
     }
 }

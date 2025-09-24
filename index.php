@@ -15,12 +15,12 @@
     <!-- main -->
     <main>
         <div class="home_main_section">
-            <p class="home_main_title">Le monde va changer en vert.</p>
+            <p class="home_main_title">Ensemble sur la route, pour un avenir durable</p>
             <a class="btn_go" href="recherche_voyage.php">C'est parti !</a>
         </div>
         <div class="home_description_section">
-            <p class="home_description">greendjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjd
-                djkjdcjbnckmjbndkjnd jnhndoq houd cqdh iuoc duh couhd.
+            <p class="home_description">
+                Optez pour une solution économique, écologique et durable.
             </p>
         </div>
     </main>

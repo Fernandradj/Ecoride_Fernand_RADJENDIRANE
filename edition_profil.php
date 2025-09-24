@@ -2,39 +2,49 @@
 <?php include 'session.php' ?>
 <?php
 
+$succesdMsg = "";
+$errorMsg = "";
+$userIsChauffeur = false;
+
 if (isset($_SESSION['id']) && isset($_SESSION['role'])) {
     $user = new Utilisateur($_SESSION['id'], $pdo);
     $userRole = $_SESSION['role'];
-    $userIsPassager = false;
-    $userIsChauffeur = false;
-}
-
-$succesMsg = "";
-
-if (isset($_POST['choixRole'])) {
-    $valeur = $_POST['choixRole'];
-
-    if ($valeur == Utilisateur::USER_ROLE_PASSAGER) {
+    if ($userRole == Utilisateur::USER_ROLE_PASSAGER) {
         $userIsChauffeur = false;
     }
     else {
         $userIsChauffeur = true;
     }
-    print_r($userIsChauffeur);
+}
 
+if (isset($_POST['choixRole'])) {
+    $userRole = $_POST['choixRole'];
+    if ($userRole == Utilisateur::USER_ROLE_PASSAGER) {
+        $userIsChauffeur = false;
+    }
+    else {
+        $userIsChauffeur = true;
+    }
 }
 
 // Check if the form was submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-
-    if (isset($_POST["choixRole"])) {
-        $userRole = $_POST["choixRole"];
-    }
-
+    
     if (isset($_POST["saveProfile"])) {
 
+        if (isset($_POST["role"])) {
+            // echo "<br>role";
+            $userRole = $_POST["role"];
+            if ($userRole == Utilisateur::USER_ROLE_PASSAGER) {
+                $userIsChauffeur = false;
+            }
+            else {
+                $userIsChauffeur = true;
+            }
+        }
+
         // Process form submission and update user data
-        /* $lastName = htmlspecialchars($_POST['last_name']);
+        $lastName = htmlspecialchars($_POST['last_name']);
         $firstName = htmlspecialchars($_POST['first_name']);
         $address = htmlspecialchars($_POST['address']);
         $phone = htmlspecialchars($_POST['phone']);
@@ -46,12 +56,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Check if a new password was provided and hash it
         $hashedPassword = "";
         if (!empty($_POST['password'])) {
-            // In a real application, you would hash this password
             $hashedPassword = password_hash($_POST['password'], PASSWORD_DEFAULT);
         }
 
-        $animalAccepted = false;
-        $smokerAccepted = false;
+        $animalAccepted = 0;
+        $smokerAccepted = 0;
         $preference = "";
         if ($userIsChauffeur) {
             $animalAccepted = isset($_POST['pets_accepted']);
@@ -77,27 +86,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $stmt->execute([$_SESSION['id'], $roleId]);
                 }
             }
+            
+            $imgContent = "";
+            if (isset($_FILES["photo"]) && $_FILES["photo"]["error"] == 0) {
+                $image = $_FILES['photo']['tmp_name'];
+                $imgContent = file_get_contents($image);
+            }
 
-            $result = $user->updateUserProfile($username, $lastName, $firstName, $address, $phone, $email, $dateOfBirth, $animalAccepted, $smokerAccepted, $preference, $credit, $hashedPassword, $pdo);
+            $result = $user->updateUserProfile($username, $lastName, $firstName, $address, $phone, $email, $dateOfBirth, $animalAccepted, $smokerAccepted, $preference, $credit, $hashedPassword, $imgContent, $pdo);
+
             if ($result->getSucceeded()) {
                 $_SESSION['role'] = $userRole;
-                $succesMsg = $result->getMessage();
+                $succesdMsg = $result->getMessage();
+                header("Refresh:2");
             }
             else {
                 $userRole = $_SESSION['role'];
                 $errorMsg = $result->getMessage();
+                header("Refresh:2");
             }
-        } */
-
-        // Handle photo upload
-        /* if (isset($_FILES['photo']) && $_FILES['photo']['error'] == 0) {
-            // In a real app, move the uploaded file to a secure directory
-            // $targetDir = "uploads/";
-            // $targetFile = $targetDir . basename($_FILES["photo"]["name"]);
-            // move_uploaded_file($_FILES["photo"]["tmp_name"], $targetFile);
-            $userData['photo'] = htmlspecialchars($_FILES['photo']['name']);
-        } */
-
+        }
     }
 }
 ?>
@@ -117,25 +125,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <main>
 
         <div class="profile-container">
-            <p>Votre profil est : <?php echo $user->getStatut(); ?></p>
-            <h2>Mon profil</h2>
 
-            <?php if (!empty($succesMsg)): ?>
-            <div class="succes-msg"><?php echo $succesMsg; ?></div>
+            <?php if (!empty($succesdMsg)): ?>
+            <div class="success-msg"><?php echo $succesdMsg; ?></div>
             <?php endif; ?>
             <?php if (!empty($errorMsg)): ?>
             <div class="error-msg"><?php echo $errorMsg; ?></div>
             <?php endif; ?>
+            
+            <h2>Mon profil</h2>
 
-            <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post"
+            <form action="<?php echo htmlspecialchars($_SERVER["REQUEST_URI"]); ?>" method="post"
                 enctype="multipart/form-data">
                 <div class="form-grid">
                     <div class="form-group photo-upload">
                         <div class="photo-preview">
                             <img src="<?php echo "image.php?userId=".$_SESSION['id']?>" alt="Image depuis la BDD">
                         </div>
-                        <!-- <label for="photo">Photo de profil</label> -->
-                        <!-- <input type="file" id="photo" name="photo"> -->
+                        <label for="photo">Photo de profil</label>
+                        <input type="file" id="photo" name="photo">
                     </div>
 
                     <div class="form-group full-width">
@@ -233,6 +241,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <button type="submit" class="btn btn-primary" name="saveProfile">Enregistrer les
                             modifications</button>
                     </div>
+                    
+                    <?php if ($userIsChauffeur): ?>
+                        <a class="action-btn btn btn-primary" href="edition_voiture.php">Mes voitures</a>
+                    <?php endif; ?>
 
                 </div>
             </form>

@@ -11,6 +11,7 @@ class Utilisateur
     public const USER_ROLE_PASSAGER_ET_CHAUFFEUR = 'Passager et Chauffeur';
 
     public const RESULT_UPDATE_PROFIL_SUCCESS = "Le profil a été mis à jour avec succès.";
+    public const RESULT_UPDATE_NOTE_SUCCESS = "La note a été mis à jour avec succès.";
     public const RESULT_FAIL = "Une erreur s'est produite lors de l'enregistrement. Veuilllez réessayer ultérieurement.";
 
     private $pdo;
@@ -190,29 +191,52 @@ class Utilisateur
         return $roleIds;
     }
 
-    public function updateUserProfile(string $username, string $lastName, string $firstName, string $address, string $phone, string $email, string $dateOfBirth, bool $animalAccepted, bool $smokerAccepted, string $preference, float $credit, string $hashedPassword, PDO $pdo): Result
+    public function updateUserProfile(string $username, string $lastName, string $firstName, string $address, string $phone, string $email, string $dateOfBirth, int $animalAccepted, int $smokerAccepted, string $preference, float $credit, string $hashedPassword, $photo, PDO $pdo): Result
     {
-        echo 'ok';
-        echo $address;
-        echo $animalAccepted;
         try {
             if (($hashedPassword != null) && ($hashedPassword != '')) {
-                $sql = "UPDATE utilisateur ('Pseudo', 'Nom', 'Prenom', 'Adresse', 'Telephone', 'Email', 'Date_naissance', 'Animal_accepte', 'Fumeur_accepte', 'Autre_preference', 'Credit', 'Password') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) WHERE Utilisateur_Id = ?";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([$username, $lastName, $firstName, $address, $phone, $email, $dateOfBirth, $animalAccepted, $smokerAccepted, $preference, $credit, $hashedPassword, $this->getId()]);
+                if (($photo != null) && ($photo != '')) {
+                    $sql = "UPDATE utilisateur SET Pseudo = ?, Nom = ?, Prenom = ?, Adresse = ?, Telephone = ?, Email = ?, Date_naissance = ?, Animal_accepte = ?, Fumeur_accepte = ?, Autre_preference = ?, Credit = ?, Password = ?, Photo = ? WHERE Utilisateur_Id = ?";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([$username, $lastName, $firstName, $address, $phone, $email, $dateOfBirth, $animalAccepted, $smokerAccepted, $preference, $credit, $hashedPassword, $photo, $this->getId()]);
+                } else {
+                    $sql = "UPDATE utilisateur SET Pseudo = ?, Nom = ?, Prenom = ?, Adresse = ?, Telephone = ?, Email = ?, Date_naissance = ?, Animal_accepte = ?, Fumeur_accepte = ?, Autre_preference = ?, Credit = ?, Password = ? WHERE Utilisateur_Id = ?";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([$username, $lastName, $firstName, $address, $phone, $email, $dateOfBirth, $animalAccepted, $smokerAccepted, $preference, $credit, $hashedPassword, $this->getId()]);
+                }
             } else {
-                $sql = "UPDATE utilisateur SET 'Pseudo' = ?, 'Nom' = ?, 'Prenom' = ?, 'Adresse' = ?, 'Telephone' = ?, 'Email' = ?, 'Date_naissance' = ?, 'Animal_accepte' = ?, 'Fumeur_accepte' = ?, 'Autre_preference' = ?, 'Credit' = ? WHERE Utilisateur_Id = ?";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([$username, $lastName, $firstName, 'toto', $phone, $email, $hashedPassword, $animalAccepted, $smokerAccepted, $preference, $credit, $this->getId()]);
+                if (($photo != null) && ($photo != '')) {
+                    $sql = "UPDATE utilisateur SET Pseudo = ?, Nom = ?, Prenom = ?, Adresse = ?, Telephone = ?, Email = ?, Date_naissance = ?, Animal_accepte = ?, Fumeur_accepte = ?, Autre_preference = ?, Credit = ?, Photo = ? WHERE Utilisateur_Id = ?";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([$username, $lastName, $firstName, $address, $phone, $email, $dateOfBirth, $animalAccepted, $smokerAccepted, $preference, $credit, $photo, $this->getId()]);
+                } else {
+                    $sql = "UPDATE utilisateur SET Pseudo = ?, Nom = ?, Prenom = ?, Adresse = ?, Telephone = ?, Email = ?, Date_naissance = ?, Animal_accepte = ?, Fumeur_accepte = ?, Autre_preference = ?, Credit = ? WHERE Utilisateur_Id = ?";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([$username, $lastName, $firstName, $address, $phone, $email, $dateOfBirth, $animalAccepted, $smokerAccepted, $preference, $credit, $this->getId()]);
+                }
             }
             if ($stmt) {
                 return new Result(true, Utilisateur::RESULT_UPDATE_PROFIL_SUCCESS);
             }
         } catch (Exception $e) {
-            echo $e;
+            // echo $e;
             return new result(false, Utilisateur::RESULT_FAIL);
         }
         return new result(false, Utilisateur::RESULT_FAIL);
+    }
+
+    public function loadVoitures(PDO $pdo): array
+    {
+        $sql_voitures = "SELECT Voiture_Id, Marque, Modele, Immatriculation, Date_premiere_immatriculation, Couleur, Energie, Nb_place FROM voiture WHERE Utilisateur_Id = ?";
+        $stmt_voitures = $pdo->prepare($sql_voitures);
+        $stmt_voitures->execute([$this->getId()]);
+        $voitures = $stmt_voitures->fetchAll(PDO::FETCH_ASSOC);
+        if ($voitures) {
+            if (count($voitures) > 0) {
+                return $voitures;
+            }
+        }
+        return [];
     }
 
     public function getId(): int
@@ -373,6 +397,31 @@ class Utilisateur
     public function notifier(string $actionType, Voyage $voyage): bool
     {
         return true;
+    }
+
+    public function updateNote($pdo): Result
+    {
+
+        try {
+            $sql = "SELECT utilisateur.Utilisateur_id, AVG(participation.note) avgNote FROM `participation` JOIN covoiturage ON covoiturage.Covoiturage_id = participation.Covoiturage_id AND covoiturage.Statut = 'Terminé' JOIN voiture ON voiture.Voiture_id = covoiturage.Voiture_id JOIN utilisateur on voiture.Utilisateur_id = utilisateur.Utilisateur_id WHERE utilisateur.Utilisateur_id = ? AND participation.Statut = 'Validé' GROUP BY utilisateur.Utilisateur_id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$this->getId()]);
+            $resultat = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($resultat) {
+                $avgNote = $resultat["avgNote"];
+                $sql = "UPDATE utilisateur SET Note = ? WHERE Utilisateur_Id = ?";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([$avgNote, $this->getId()]);
+                $resultat = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($resultat) {
+                    return new Result(true, Utilisateur::RESULT_UPDATE_NOTE_SUCCESS);
+                }
+            }
+        } catch (Exception $e) {
+
+        }
+        return new Result(false, Utilisateur::RESULT_FAIL);
     }
 
 }
