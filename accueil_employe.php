@@ -7,7 +7,7 @@ if (isset($_GET['userId'])) {
     try {
 
         // Requête pour récupérer tous les utilisateurs
-        $sql = "SELECT Avis_Id, avis.Utilisateur_Id, Commentaire, avis.Note, avis.Statut, avis.Covoiturage_Id, covoiturage.Statut, Ville_arrivee, Ville_depart,  Date_arrivee , utilisateur.Nom, utilisateur.Prenom, utilisateur.Email, chauffeur.Nom nomChauffeur, chauffeur.Prenom prenomChauffeur, chauffeur.Email emailChauffeur  FROM avis JOIN utilisateur ON utilisateur.Utilisateur_Id = avis.Utilisateur_Id JOIN covoiturage ON avis.Covoiturage_Id = covoiturage.Covoiturage_Id JOIN voiture ON covoiturage.Voiture_Id = voiture.Voiture_Id JOIN utilisateur chauffeur ON voiture.Utilisateur_Id = chauffeur.Utilisateur_Id WHERE covoiturage.statut = 'Terminé' AND avis.statut = 'En cours de validation'" ; 
+        $sql = "SELECT Avis_Id, participation.Utilisateur_Id, Commentaire, participation.Note, participation.Statut, participation.Covoiturage_Id, covoiturage.Statut, Ville_arrivee, Ville_depart,  Date_arrivee , utilisateur.Nom, utilisateur.Prenom, utilisateur.Email, chauffeur.Nom nomChauffeur, chauffeur.Prenom prenomChauffeur, chauffeur.Email emailChauffeur  FROM participation JOIN utilisateur ON utilisateur.Utilisateur_Id = participation.Utilisateur_Id JOIN covoiturage ON participation.Covoiturage_Id = covoiturage.Covoiturage_Id JOIN voiture ON covoiturage.Voiture_Id = voiture.Voiture_Id JOIN utilisateur chauffeur ON voiture.Utilisateur_Id = chauffeur.Utilisateur_Id WHERE covoiturage.Statut = 'Terminé' AND participation.Statut = 'En attente de validation'" ; 
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
         $resultats = $stmt->fetchAll(PDO::FETCH_ASSOC);

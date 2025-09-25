@@ -31,7 +31,7 @@ if (isset($_GET['userId'])) {
     <!-- main -->
     <main>
         <div>graphique</div>
-        <a href="">Créer un nouvel employé</a>
+        <a href="creation_compte.php">Créer un nouvel employé</a>
 
         <div class="liste_voyages_container">
             <h1>Listes des utilisateurs</h1>
