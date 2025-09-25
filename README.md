@@ -49,7 +49,7 @@ Suivez ces étapes pour démarrer le projet sur votre machine locale.
     ```
 3.  **Configuration de la base de données**
 
-      * Lancer PHPMyAdmin et importer le fichier SQL de la base de données (ecorideprojet23_bdd.sql dans le dossir Documents) présent dans le répertoire Git
+      * Lancer PHPMyAdmin et importer le fichier SQL de la base de données (ecorideprojet23_bdd.sql dans le dossier Documents) présent dans le répertoire Git
 
 4.  **Configurer et démarrer les services Xampp**
 
