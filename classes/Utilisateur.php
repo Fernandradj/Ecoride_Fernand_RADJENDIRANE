@@ -135,7 +135,7 @@ class Utilisateur
             if ($role['Libelle'] == Utilisateur::USER_ROLE_PASSAGER) {
                 $userIsPassager = true;
             }
-            if ($role['Libelle'] == Utilisateur::USER_ROLE_EMPLOYE) {
+            if ($role['Libelle'] == Utilisateur::USER_ROLE_ADMIN) {
                 $userIsAdmin = true;
             }
             if ($role['Libelle'] == Utilisateur::USER_ROLE_EMPLOYE) {

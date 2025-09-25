@@ -154,7 +154,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <?php endif; ?>
 
                             <?php if ($displayAnnulerPassager): ?>
-                                <button class="action-btn" name="annulerPassager" type="submit">Annuler (Passager)</button>
+                                <button class="action-btn" name="annulerPassager" type="submit">Annuler</button>
                             <?php endif; ?>
 
                             <?php if ($displayValider): ?>

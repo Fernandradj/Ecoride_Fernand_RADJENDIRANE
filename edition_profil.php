@@ -5,24 +5,27 @@
 $succesdMsg = "";
 $errorMsg = "";
 $userIsChauffeur = false;
+$userIsPassager = false;
 
 if (isset($_SESSION['id']) && isset($_SESSION['role'])) {
     $user = new Utilisateur($_SESSION['id'], $pdo);
     $userRole = $_SESSION['role'];
-    if ($userRole == Utilisateur::USER_ROLE_PASSAGER) {
-        $userIsChauffeur = false;
+    if ($user->userIsPassager()) {
+        $userIsPassager = true;
     }
-    else {
+    else if ($user->userIsChauffeur()) {
         $userIsChauffeur = true;
     }
 }
 
 if (isset($_POST['choixRole'])) {
+    $userIsChauffeur = false;
+    $userIsPassager = false;
     $userRole = $_POST['choixRole'];
     if ($userRole == Utilisateur::USER_ROLE_PASSAGER) {
-        $userIsChauffeur = false;
+        $userIsPassager = true;
     }
-    else {
+    else if ($userRole == Utilisateur::USER_ROLE_CHAUFFEUR) {
         $userIsChauffeur = true;
     }
 }
@@ -33,12 +36,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (isset($_POST["saveProfile"])) {
 
         if (isset($_POST["role"])) {
-            // echo "<br>role";
+            $userIsChauffeur = false;
+            $userIsPassager = false;
             $userRole = $_POST["role"];
             if ($userRole == Utilisateur::USER_ROLE_PASSAGER) {
-                $userIsChauffeur = false;
+                $userIsPassager = true;
             }
-            else {
+            else if ($userRole == Utilisateur::USER_ROLE_CHAUFFEUR) {
                 $userIsChauffeur = true;
             }
         }
@@ -67,9 +71,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $smokerAccepted = isset($_POST['smoker_accepted']);
             $preference = htmlspecialchars($_POST['other_prefs']);
         }
-        $userRole = htmlspecialchars($_POST['role']);
+        
+        if (isset($_POST["role"])) {
+            $userRole = htmlspecialchars($_POST['role']);
+        }
 
-        if (isset($_SESSION['id']) && ($_SESSION['role'])) {
+        if (isset($_SESSION['id']) && isset($_SESSION['role'])) {
             $currentRole = $_SESSION['role'];
             if ($currentRole != $userRole) {
                 
@@ -138,7 +145,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <form action="<?php echo htmlspecialchars($_SERVER["REQUEST_URI"]); ?>" method="post"
                 enctype="multipart/form-data">
                 <div class="form-grid">
-                    <div class="form-group photo-upload">
+                    <div class="form-group photo-upload full-width">
                         <div class="photo-preview">
                             <img src="<?php echo "image.php?userId=".$_SESSION['id']?>" alt="Image depuis la BDD">
                         </div>
@@ -146,6 +153,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="file" id="photo" name="photo">
                     </div>
 
+                    <?php if ($userIsPassager || $userIsChauffeur): ?>
                     <div class="form-group full-width">
                         <label for="role">Rôle</label>
                         <select id="role" name="role" onchange="userRoleUpdated()">
@@ -160,7 +168,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <?php echo Utilisateur::USER_ROLE_PASSAGER_ET_CHAUFFEUR ?></option>
                         </select>
                     </div>
-
+                    <?php endif; ?>
 
                     <div class="form-group">
                         <label for="last_name">Nom</label>
@@ -173,7 +181,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <input type="text" id="first_name" name="first_name"
                             value="<?php echo htmlspecialchars($user->getFirstName()); ?>" required>
                     </div>
-
+                    
                     <div class="form-group full-width">
                         <label for="address">Adresse</label>
                         <input type="text" id="address" name="address"
