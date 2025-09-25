@@ -22,7 +22,7 @@
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
         <div class="container-fluid">
             <a class="navbar-brand" href="index.php">
-                <img src="images/logo-d-écologie-37243681.webp" class="ecoride_logo" alt="Eco Ride">
+                <img src="images/logo-ecoride.png" class="ecoride_logo" alt="Eco Ride">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                 data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false"
